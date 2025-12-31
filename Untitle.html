@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy New Year My Love 💖</title>
+    <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --pink: #ffb7c5;
+            --dark-pink: #ff8fa3;
+            --blue: #b3e5fc;
+        }
+
+        body {
+            font-family: 'Mali', cursive;
+            background: #fce4ec;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* 1. หน้าแรก */
+        #screen-intro {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(180deg, #fce4ec 0%, #e1f5fe 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        /* 2. หน้าจอนับถอยหลัง & พลุ */
+        #screen-celebrate {
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+
+        /* 3. หน้าเกม */
+        #screen-game {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            z-index: 50;
+        }
+
+        .btn-main {
+            background: var(--blue);
+            color: white;
+            border: 4px solid white;
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Mali';
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            transition: 0.3s;
+        }
+
+        .btn-main:hover { transform: scale(1.1); background: var(--dark-pink); }
+
+        /* สไตล์จิ๊กซอว์ */
+        .puzzle-board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            gap: 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 20px;
+            border: 5px solid var(--blue);
+        }
+
+        .piece {
+            width: 100px;
+            height: 100px;
+            background-image: url('https://img2.pic.in.th/39DF7E85-1B70-4E6C-B39F-C96D9290E2DC.jpeg');
+            background-size: 300px 300px;
+            border-radius: 10px;
+            cursor: pointer;
+            position: relative;
+            box-sizing: border-box;
+            border: 2px solid #eee;
+        }
+
+        /* เลขจิ๊กซอว์ ตัวใหญ่ๆ */
+        .piece::after {
+            content: attr(data-num);
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            font-weight: bold;
+            color: white;
+            background: rgba(0,0,0,0.3);
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+        }
+
+        .piece.is-correct::after {
+            content: '✅';
+            background: rgba(129, 199, 132, 0.4);
+            font-size: 30px;
+        }
+
+        .piece.selected { border: 4px solid var(--dark-pink); transform: scale(0.9); }
+
+        /* กล่องข้อความสุดท้าย */
+        #modal-surprise {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            width: 85%;
+            max-width: 400px;
+            padding: 30px;
+            border-radius: 30px;
+            border: 6px solid var(--pink);
+            text-align: center;
+            z-index: 300;
+        }
+
+        .count-text { font-size: 6rem; color: var(--dark-pink); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div id="screen-intro">
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRKtW3YYnBv-rntmWjY9pnV_-jNr3AYtIx1KpIvgGq0ug&s=10" width="150">
+        <h1 style="color: var(--dark-pink);">Happy New Year 💖</h1>
+        <button class="btn-main" onclick="goCelebration()">รับของขวัญจากอ้วน 🎀</button>
+    </div>
+
+    <div id="screen-celebrate">
+        <div id="countdown-num" class="count-text">3</div>
+        <h2 id="hny-text" style="display:none; color: var(--dark-pink); font-size: 2rem;">HAPPY NEW YEAR! 🎇</h2>
+    </div>
+
+    <div id="screen-game">
+        <div style="background:white; padding:10px 20px; border-radius:30px; margin-bottom:15px; border:2px solid var(--blue); color: var(--dark-pink); font-weight:bold;">ต่อรูปอ้วนให้ครบนะค๊าบ ✨</div>
+        <div id="board" class="puzzle-board"></div>
+        <p style="color: var(--dark-pink); margin-top:15px; font-weight:bold;">เรียงเลข 1-9 ให้ขึ้น ✅ นะ!</p>
+    </div>
+
+    <div id="modal-surprise">
+        <h2 style="color: var(--dark-pink);">ถึง... อ้วนของเค้า 💖</h2>
+        <p style="text-align: left; line-height: 1.6; color: #5d4037;">
+            ขอบคุณเธอที่เข้ามาในชีวิตเค้านะ ขอบคุณที่ทำให้เค้ามีความสุขในทุกๆวัน อยากมีอ้วนไปตลอดไปเลยนะ รักเธอมากขึ้นทู้กวันเยย อยากไปไหนด้วยกันอีกเย้อๆ ไปเที่ยวด้วยกัน ไปหาไรกินอร่อยๆ เย้อๆ อยากไปแช๊ะๆ อีกหลายๆภาพ อยากเจอกันทุกวันเลยอะ ขอโทษที่บางครั้งทำตัวไม่น่ารักนะ ทำตัวไม่ดี แต่ไม่อยากให้เบื่อกันเลยงะ รักนะ รักมากเลย ♥️♥️♥️🥺
+        </p>
+        <button class="btn-main" style="font-size: 1rem;" onclick="location.reload()">เล่นใหม่อีกรอบ 🐰</button>
+    </div>
+
+    <script>
+        let firstPiece = null;
+
+        // 1. เริ่มลำดับการฉลอง
+        function goCelebration() {
+            document.getElementById('screen-intro').style.display = 'none';
+            const screen = document.getElementById('screen-celebrate');
+            const numText = document.getElementById('countdown-num');
+            screen.style.display = 'flex';
+
+            let count = 3;
+            let timer = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    numText.innerText = count;
+                } else if (count === 0) {
+                    numText.innerText = "HNY!";
+                    launchFireworks(); // จุดพลุ
+                } else {
+                    clearInterval(timer);
+                    screen.style.display = 'none';
+                    document.getElementById('screen-game').style.display = 'flex';
+                    initGame();
+                }
+            }, 1000);
+        }
+
+        // 2. ฟังก์ชันพลุ (Side Cannons)
+        function launchFireworks() {
+            const end = Date.now() + 3000;
+            const colors = ['#ffb7c5', '#ff8fa3', '#b3e5fc', '#ffffff'];
+
+            (function frame() {
+                confetti({
+                    particleCount: 7,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0, y: 0.8 },
+                    colors: colors
+                });
+                confetti({
+                    particleCount: 7,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1, y: 0.8 },
+                    colors: colors
+                });
+
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+        }
+
+        // 3. เริ่มเกมจิ๊กซอว์
+        function initGame() {
+            const board = document.getElementById('board');
+            let ids = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+            // สุ่มตำแหน่ง
+            ids.sort(() => Math.random() - 0.5);
+
+            board.innerHTML = '';
+            ids.forEach((val, i) => {
+                const el = document.createElement('div');
+                el.className = 'piece';
+                el.dataset.correctIdx = val;
+                el.dataset.num = val + 1;
+                
+                // ตั้งค่ารูปภาพ
+                const x = (val % 3) * 100;
+                const y = Math.floor(val / 3) * 100;
+                el.style.backgroundPosition = `-${x}px -${y}px`;
+
+                el.onclick = () => onPieceClick(el);
+                board.appendChild(el);
+            });
+            checkPieces();
+        }
+
+        function onPieceClick(el) {
+            if (!firstPiece) {
+                firstPiece = el;
+                el.classList.add('selected');
+            } else {
+                if (firstPiece === el) {
+                    el.classList.remove('selected');
+                    firstPiece = null;
+                    return;
+                }
+                // สลับข้อมูล
+                const tPos = el.style.backgroundPosition;
+                const tIdx = el.dataset.correctIdx;
+                const tNum = el.dataset.num;
+
+                el.style.backgroundPosition = firstPiece.style.backgroundPosition;
+                el.dataset.correctIdx = firstPiece.dataset.correctIdx;
+                el.dataset.num = firstPiece.dataset.num;
+
+                firstPiece.style.backgroundPosition = tPos;
+                firstPiece.dataset.correctIdx = tIdx;
+                firstPiece.dataset.num = tNum;
+
+                firstPiece.classList.remove('selected');
+                firstPiece = null;
+                checkPieces();
+            }
+        }
+
+        function checkPieces() {
+            const pieces = document.querySelectorAll('.piece');
+            let winCount = 0;
+            pieces.forEach((p, i) => {
+                if (parseInt(p.dataset.correctIdx) === i) {
+                    p.classList.add('is-correct');
+                    winCount++;
+                } else {
+                    p.classList.remove('is-correct');
+                }
+            });
+
+            if (winCount === 9) {
+                setTimeout(() => {
+                    document.getElementById('screen-game').style.opacity = '0.3';
+                    document.getElementById('modal-surprise').style.display = 'block';
+                    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                }, 600);
+            }
+        }
+    </script>
+</body>
+</html>
